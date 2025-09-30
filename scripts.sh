@@ -1,13 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# Bash Script to Complete the Git Fundamentals Challenge
-#
-# Instructions:
-# 1. Save this file as 'complete_challenge.sh' in your 'activity' directory.
-# 2. Open a terminal or Git Bash in the 'activity' directory.
-# 3. Make the script executable by running: chmod +x complete_challenge.sh
-# 4. Run the script: ./complete_challenge.sh
+# Bash Script to Complete the Git Fundamentals Challenge (Corrected Version)
 # ==============================================================================
 
 # Exit immediately if a command exits with a non-zero status.
@@ -22,6 +16,8 @@ echo -e "${COLOR_YELLOW}Starting the Git Fundamentals Challenge script...${COLOR
 
 # --- Task 1: Git Repository Setup and Configuration ---
 echo -e "\n${COLOR_GREEN}--- Task 1: Git Repository Setup and Configuration ---${COLOR_NC}"
+# Clean up previous run if it exists
+rm -rf git-fundamentals-project
 mkdir -p git-fundamentals-project
 cd git-fundamentals-project
 
@@ -35,6 +31,10 @@ log_and_run() {
 }
 
 log_and_run git init
+# Set the default branch name to main for consistency
+log_and_run git config -g init.defaultBranch main
+log_and_run git branch -M main
+
 log_and_run git config user.name "TestUser"
 log_and_run git config user.email "testuser@example.com"
 
@@ -136,7 +136,8 @@ echo "A small fix for a bug." >> README.md
 git commit -am "Fix: Correct typo in README"
 
 git switch main
-git merge bugfix
+# --- FIX #1: Use --no-ff to force a merge commit ---
+git merge --no-ff bugfix
 
 echo "Current branches (* indicates active branch):"
 git branch
@@ -204,6 +205,11 @@ EOF
 # Create a final summary file from Task 4
 cp branching-workflow.txt git-commands-summary.txt
 echo -e "\nSummary of commands can be found by reviewing the script and log files." >> git-commands-summary.txt
+
+# --- FIX #2: Add and commit the final documentation files ---
+echo "Adding final documentation files to the repository..."
+git add .
+git commit -m "Docs: Add final workflow and summary documents"
 
 # Final check
 echo "Final repository status:"
