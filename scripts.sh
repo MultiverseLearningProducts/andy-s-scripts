@@ -1,154 +1,211 @@
-# check_challenge.ps1 (Version 3: Returns a PSCustomObject)
+#!/bin/bash
+
+# ==============================================================================
+# Bash Script to Complete the Git Fundamentals Challenge
 #
-# A script to verify the completion of the Git Fundamentals Project challenge.
-# It can be run from any directory and returns a structured object for automation.
+# Instructions:
+# 1. Save this file as 'complete_challenge.sh' in your 'activity' directory.
+# 2. Open a terminal or Git Bash in the 'activity' directory.
+# 3. Make the script executable by running: chmod +x complete_challenge.sh
+# 4. Run the script: ./complete_challenge.sh
+# ==============================================================================
 
-# --- Script Parameters ---
-param(
-    [string]$ProjectPath = "$env:USERPROFILE\Desktop\activity\git-fundamentals-project"
-)
+# Exit immediately if a command exits with a non-zero status.
+set -e
 
-# --- Script-Scoped Variables for Final Report ---
-$script:failureMessages = [System.Collections.Generic.List[string]]::new()
+# --- Helper for colored output ---
+COLOR_GREEN='\033[0;32m'
+COLOR_YELLOW='\033[0;33m'
+COLOR_NC='\033[0m' # No Color
 
-# --- Helper Functions ---
-function Check-Requirement {
-    param(
-        [Parameter(Mandatory=$true)]
-        [bool]$Condition,
-        [Parameter(Mandatory=$true)]
-        [string]$SuccessMessage,
-        [Parameter(Mandatory=$false)]
-        [string]$FailureMessage = "Requirement not met."
-    )
-    if ($Condition) {
-        Write-Host "  [✔] " -ForegroundColor Green -NoNewline; Write-Host $SuccessMessage
-        return $true
-    } else {
-        Write-Host "  [✘] " -ForegroundColor Red -NoNewline; Write-Host $FailureMessage
-        # Add the specific failure message to our list for the final report
-        $script:failureMessages.Add($FailureMessage)
-        return $false
-    }
-}
-
-function Print-SectionHeader {
-    param([string]$Title)
-    Write-Host "`n" + ("-" * 60); Write-Host " Verifying: $Title"; Write-Host ("-" * 60)
-}
-
-function Test-FileNotEmpty {
-    param([string]$FilePath)
-    return (Test-Path $FilePath) -and ((Get-Item $FilePath).Length -gt 0)
-}
-
-# --- Main Script ---
-# Suppress console output from commands and focus on our own feedback
-$ProgressPreference = 'SilentlyContinue'
-
-Clear-Host
-Write-Host "============================================="
-Write-Host " Git Fundamentals Project Verification Script"
-Write-Host "=============================================" -NoNewline
-
-# --- Pre-check: Ensure the project directory exists ---
-if (-not (Test-Path $ProjectPath -PathType Container)) {
-    # Immediately return a failure object if the main directory is missing
-    return [PSCustomObject]@{
-        result = $false
-        info   = "CRITICAL: Project directory not found at the expected location: $ProjectPath"
-    }
-}
-Write-Host "`n🔍 Checking project located at: $ProjectPath`n"
-
-# --- Pre-check 2: Ensure it's a Git repository ---
-if (-not (Test-Path (Join-Path $ProjectPath ".git"))) {
-    return [PSCustomObject]@{
-        result = $false
-        info   = "CRITICAL: The directory is not a Git repository. Please run 'git init' inside it."
-    }
-}
-
-$AllChecksPassed = $true # Master boolean for the final result
-$MainBranchName = if ($(git -C $ProjectPath branch --list main)) { "main" } else { "master" }
+echo -e "${COLOR_YELLOW}Starting the Git Fundamentals Challenge script...${COLOR_NC}"
 
 # --- Task 1: Git Repository Setup and Configuration ---
-Print-SectionHeader "Task 1: Git Repository Setup"
-$task1_passed = $true
-$task1_passed = (Check-Requirement (Test-Path (Join-Path $ProjectPath ".git") -PathType Container) "Git repository has been initialized (.git folder found).") -and $task1_passed
-$userName = git -C $ProjectPath config user.name
-$userEmail = git -C $ProjectPath config user.email
-$task1_passed = (Check-Requirement ($userName -eq "TestUser") "Git username is correctly configured as 'TestUser'." "Git username is not 'TestUser'.") -and $task1_passed
-$task1_passed = (Check-Requirement ($userEmail -eq "testuser@example.com") "Git email is correctly configured as 'testuser@example.com'." "Git email is not 'testuser@example.com'.") -and $task1_passed
-$gitignorePath = Join-Path $ProjectPath ".gitignore"
-if (Test-Path $gitignorePath) {
-    $gitignoreContent = Get-Content $gitignorePath
-    $task1_passed = (Check-Requirement ($gitignoreContent -match "\.tmp" -and $gitignoreContent -match "\.log" -and $gitignoreContent -match "\.DS_Store") ".gitignore file contains required patterns." ".gitignore file is missing required patterns.") -and $task1_passed
-} else { $task1_passed = (Check-Requirement $false ".gitignore file exists." ".gitignore file is missing.") -and $task1_passed }
-$task1_passed = (Check-Requirement (Test-Path (Join-Path $ProjectPath "README.md")) "README.md file exists." "README.md file is missing.") -and $task1_passed
-$task1_passed = (Check-Requirement ((git -C $ProjectPath log).Length -gt 0) "At least one commit has been made." "No commits found in the repository.") -and $task1_passed
-$task1_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "git-setup-log.txt")) "'git-setup-log.txt' exists and is not empty." "'git-setup-log.txt' is missing or empty.") -and $task1_passed
-if (-not $task1_passed) { $AllChecksPassed = $false }
+echo -e "\n${COLOR_GREEN}--- Task 1: Git Repository Setup and Configuration ---${COLOR_NC}"
+mkdir -p git-fundamentals-project
+cd git-fundamentals-project
+
+# Log all commands for this task into git-setup-log.txt
+LOG_FILE="git-setup-log.txt"
+> "$LOG_FILE" # Clear the log file if it exists
+
+log_and_run() {
+    echo "$ $@" >> "$LOG_FILE"
+    "$@"
+}
+
+log_and_run git init
+log_and_run git config user.name "TestUser"
+log_and_run git config user.email "testuser@example.com"
+
+# Create .gitignore
+echo -e "*.tmp\n*.log\n.DS_Store" > .gitignore
+echo 'echo -e "*.tmp\\n*.log\\n.DS_Store" > .gitignore' >> "$LOG_FILE"
+
+# Create README.md
+echo "# Git Fundamentals Project" > README.md
+echo 'echo "# Git Fundamentals Project" > README.md' >> "$LOG_FILE"
+
+log_and_run git add .
+log_and_run git commit -m "Initial commit: Add README and .gitignore"
+log_and_run git status
+log_and_run git log --oneline
+
+echo "Task 1 complete. Commands logged to $LOG_FILE."
 
 # --- Task 2: Working with Git States and Basic Commands ---
-Print-SectionHeader "Task 2: Working with Git States"
-$task2_passed = $true
-$task2_passed = (Check-Requirement (Test-Path (Join-Path $ProjectPath "main.java")) "'main.java' exists." "'main.java' is missing.") -and $task2_passed
-$task2_passed = (Check-Requirement (Test-Path (Join-Path $ProjectPath "utils.java")) "'utils.java' exists." "'utils.java' is missing.") -and $task2_passed
-$task2_passed = (Check-Requirement (Test-Path (Join-Path $ProjectPath "config.json")) "'config.json' exists." "'config.json' is missing.") -and $task2_passed
-$filesInRepo = git -C $ProjectPath ls-tree -r HEAD --name-only
-$task2_passed = (Check-Requirement ($filesInRepo -contains "main.java" -and $filesInRepo -contains "utils.java" -and $filesInRepo -contains "config.json") "Java and JSON files have been committed." "One or more of main.java, utils.java, config.json have not been committed.") -and $task2_passed
-$task2_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "git-states-explanation.txt")) "'git-states-explanation.txt' exists and is not empty." "'git-states-explanation.txt' is missing or empty.") -and $task2_passed
-if (-not $task2_passed) { $AllChecksPassed = $false }
+echo -e "\n${COLOR_GREEN}--- Task 2: Working with Git States ---${COLOR_NC}"
+echo "public class Main { public static void main(String[] args) { System.out.println(\"Hello\"); } }" > main.java
+echo "public class Utils { public static void helper() {} }" > utils.java
+echo "{ \"setting\": \"enabled\" }" > config.json
+echo "Current status (3 untracked files):"
+git status
+
+git add main.java
+echo "Status after staging main.java:"
+git status
+
+echo "// Adding a comment" >> main.java
+echo "Diff between working directory and staging area for main.java:"
+git diff main.java
+
+echo "Diff between staging area and repository (shows staged version of main.java):"
+git diff --cached
+
+git add .
+git commit -m "Feat: Add java source files and config"
+
+cat <<EOF > git-states-explanation.txt
+Git has three main states for your files:
+1.  Working Directory: Your local files that you are currently editing.
+2.  Staging Area (Index): A snapshot of files you've marked ('git add') to be included in your next commit.
+3.  Repository (.git directory): The permanent history of all your committed snapshots.
+
+'git status' shows the state of files. 'git diff' shows changes in the working directory not yet staged. 'git diff --cached' shows staged changes that are not yet committed.
+EOF
+echo "Task 2 complete. Wrote explanation to git-states-explanation.txt."
 
 # --- Task 3: Git History and Log Management ---
-Print-SectionHeader "Task 3: Git History"
-$task3_passed = $true
-$commitCount = (git -C $ProjectPath log --oneline).Count
-$task3_passed = (Check-Requirement ($commitCount -ge 5) "At least 5 commits found (Found: $commitCount)." "Fewer than 5 commits found (Found: $commitCount).") -and $task3_passed
-$task3_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "commit-history.txt")) "'commit-history.txt' exists and not empty." "'commit-history.txt' is missing or empty.") -and $task3_passed
-$task3_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "git-log-analysis.txt")) "'git-log-analysis.txt' exists and not empty." "'git-log-analysis.txt' is missing or empty.") -and $task3_passed
-if (-not $task3_passed) { $AllChecksPassed = $false }
+echo -e "\n${COLOR_GREEN}--- Task 3: Git History and Log Management ---${COLOR_NC}"
+# Make 3 more commits
+echo "public class Utils { public static void helper() { /* updated */ } }" > utils.java
+git commit -am "Refactor: Update Utils helper method"
+
+echo "{ \"setting\": \"disabled\", \"mode\": \"safe\" }" > config.json
+git commit -am "Config: Disable setting and add safe mode"
+
+echo "Initial project setup for learning Git fundamentals." >> README.md
+git commit -am "Docs: Update project description in README"
+
+echo "Viewing condensed, graphical log:"
+git log --graph --oneline
+
+LATEST_HASH=$(git log --oneline -1 | cut -d' ' -f1)
+echo "Showing details for a specific commit ($LATEST_HASH):"
+git show "$LATEST_HASH"
+
+git log > commit-history.txt
+
+cat <<EOF > git-log-analysis.txt
+Analysis of 'git log' commands:
+- 'git log': Shows the complete commit history with author, date, and full message.
+- 'git log --oneline': Condenses each commit to a single line showing the hash and title.
+- 'git log --graph': Displays the branch and merge history as an ASCII graph.
+- 'git show <hash>': Shows the metadata and content changes of a specific commit.
+- 'git log --author="TestUser"': Filters the log to show only commits by a specific author.
+EOF
+
+echo "Task 3 complete. Saved log to commit-history.txt and analysis to git-log-analysis.txt."
 
 # --- Task 4: Basic Branching and Repository Management ---
-Print-SectionHeader "Task 4: Branching and Merging"
-$task4_passed = $true
-$branches = git -C $ProjectPath branch
-$task4_passed = (Check-Requirement ($branches -match "feature-development") "Branch 'feature-development' exists." "Branch 'feature-development' was not found.") -and $task4_passed
-$task4_passed = (Check-Requirement ($branches -match "bugfix") "Branch 'bugfix' exists." "Branch 'bugfix' was not found.") -and $task4_passed
-$featureFileExists = (git -C $ProjectPath ls-tree -r "feature-development" --name-only) -contains "feature.java"
-$task4_passed = (Check-Requirement $featureFileExists "'feature.java' committed on 'feature-development' branch." "'feature.java' was not found on the 'feature-development' branch.") -and $task4_passed
-$mergeCommitsOnMain = git -C $ProjectPath log $MainBranchName --merges --oneline
-$task4_passed = (Check-Requirement ($mergeCommitsOnMain -match "Merge branch 'bugfix'") "The 'bugfix' branch has been merged into '$MainBranchName'." "The 'bugfix' branch has not been merged into '$MainBranchName'.") -and $task4_passed
-$task4_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "branching-workflow.txt")) "'branching-workflow.txt' exists and not empty." "'branching-workflow.txt' is missing or empty.") -and $task4_passed
-$task4_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "git-commands-summary.txt")) "'git-commands-summary.txt' exists and not empty." "'git-commands-summary.txt' is missing or empty.") -and $task4_passed
-if (-not $task4_passed) { $AllChecksPassed = $false }
+echo -e "\n${COLOR_GREEN}--- Task 4: Basic Branching and Repository Management ---${COLOR_NC}"
+git branch feature-development
+git switch feature-development
+
+echo "public class Feature { public void newFeature() {} }" > feature.java
+git add feature.java
+git commit -m "Feat: Implement new feature"
+
+git switch main
+echo "Switched to main. 'feature.java' should not exist here:"
+ls -la
+
+git branch bugfix
+git switch bugfix
+echo "A small fix for a bug." >> README.md
+git commit -am "Fix: Correct typo in README"
+
+git switch main
+git merge bugfix
+
+echo "Current branches (* indicates active branch):"
+git branch
+
+cat <<EOF > branching-workflow.txt
+Branching allows for parallel development.
+1. Create a branch ('git branch <name>') for a new feature or bugfix.
+2. Switch to it ('git switch <name>').
+3. Make and commit changes on this branch. This isolates your work from the main codebase.
+4. When work is complete and tested, switch back to the main branch and merge the changes ('git merge <name>').
+EOF
+
+echo "Task 4 complete. Wrote explanation to branching-workflow.txt."
 
 # --- Task 5: Git Best Practices and Workflow ---
-Print-SectionHeader "Task 5: Best Practices"
-$task5_passed = $true
-$task5_passed = (Check-Requirement ($(git -C $ProjectPath branch) -match "development") "Branch 'development' exists." "Branch 'development' was not found.") -and $task5_passed
-$task5_passed = (Check-Requirement (Test-Path (Join-Path $ProjectPath "docs") -PathType Container) "'docs' folder exists." "The 'docs' folder is missing.") -and $task5_passed
-$task5_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "git-workflow-guide.txt")) "'git-workflow-guide.txt' exists and not empty." "'git-workflow-guide.txt' is missing or empty.") -and $task5_passed
-$repoStatus = git -C $ProjectPath status --porcelain
-$task5_passed = (Check-Requirement ([string]::IsNullOrEmpty($repoStatus)) "Final repository state is clean." "Repository has uncommitted changes.") -and $task5_passed
-if (-not $task5_passed) { $AllChecksPassed = $false }
+echo -e "\n${COLOR_GREEN}--- Task 5: Git Best Practices and Workflow ---${COLOR_NC}"
+git branch development
+git switch development
 
-# --- Final Object Creation ---
-$infoString = ""
-if ($AllChecksPassed) {
-    $infoString = "🎉 Congratulations! All checks passed. You have successfully completed the challenge. 🎉"
-} else {
-    # Join all collected failure messages into a single string with newlines
-    $infoString = "⚠️ Some requirements were not met. Please review the following items:`n- " + ($script:failureMessages -join "`n- ")
-}
+mkdir docs
+echo "Documentation for main.java" > docs/main.md
+git add .
+git commit -m "Feat: Add documentation structure"
 
-Write-Host "`n" + ("=" * 60)
-Write-Host " Verification Complete"
-Write-Host ("=" * 60)
+echo "Documentation for utils.java" > docs/utils.md
+git add .
+git commit -m "a bad commit message"
+git commit --amend -m "Docs: Add documentation for utils"
 
-# Create and return the custom object. This will be the script's actual output.
-return [PSCustomObject]@{
-    result = $AllChecksPassed
-    info   = $infoString
-}
+# Demonstrate reset
+touch temp.log
+git add temp.log
+echo "Staged temp.log, now resetting..."
+git reset HEAD temp.log
+rm temp.log
+
+# Demonstrate checkout
+echo "Adding a mistake to README" >> README.md
+git status
+echo "Discarding mistake from README..."
+git checkout -- README.md
+git status
+
+cat <<EOF > git-workflow-guide.txt
+A comprehensive guide to Git workflows.
+
+Best Practices for Commit Messages:
+- Use imperative mood ("Add feature" not "Added feature").
+- Separate subject from body with a blank line.
+- Limit the subject line to 50 characters.
+
+Branching Strategy:
+- 'main' is always stable and deployable.
+- 'development' is the integration branch for features.
+- Feature branches ('feature/...') are for new work.
+- Bugfix branches ('bugfix/...') are for urgent fixes.
+
+Common Workflow (Git Flow):
+1. Create a 'develop' branch from 'main'.
+2. Create feature branches from 'develop'.
+3. When a feature is complete, merge it back into 'develop'.
+4. When 'develop' is stable, merge it into 'main' for a release.
+EOF
+
+# Create a final summary file from Task 4
+cp branching-workflow.txt git-commands-summary.txt
+echo -e "\nSummary of commands can be found by reviewing the script and log files." >> git-commands-summary.txt
+
+# Final check
+echo "Final repository status:"
+git status
+echo -e "\n${COLOR_YELLOW}All challenge tasks have been completed successfully!${COLOR_NC}"
