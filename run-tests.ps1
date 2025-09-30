@@ -1,4 +1,4 @@
-# Simplified Verification Script (Silent, Object-Output Only)
+# Simplified Verification Script (Version 1.1: Boolean fix)
 
 # --- Script Parameters ---
 param(
@@ -9,7 +9,6 @@ param(
 $script:failureMessages = [System.Collections.Generic.List[string]]::new()
 
 # --- Helper Functions ---
-# This streamlined function is now silent. It only collects failures.
 function Check-Requirement {
     param(
         [Parameter(Mandatory=$true)]
@@ -51,7 +50,8 @@ $task1_passed = (Check-Requirement ($(git -C $ProjectPath config user.email) -eq
 $gitignorePath = Join-Path $ProjectPath ".gitignore"
 if (Test-Path $gitignorePath) {
     $gitignoreContent = Get-Content $gitignorePath
-    $task1_passed = (Check-Requirement ($gitignoreContent -match "\.tmp" -and $gitignoreContent -match "\.log" -and $gitignoreContent -match "\.DS_Store") "Task 1: .gitignore is missing required patterns.") -and $task1_passed
+    # <-- CORRECTED: Each -match must be converted to a boolean before using -and
+    $task1_passed = (Check-Requirement ([bool]($gitignoreContent -match "\.tmp") -and [bool]($gitignoreContent -match "\.log") -and [bool]($gitignoreContent -match "\.DS_Store")) "Task 1: .gitignore is missing required patterns.") -and $task1_passed
 } else { $task1_passed = (Check-Requirement $false "Task 1: .gitignore file is missing.") -and $task1_passed }
 $task1_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "README.md")) "Task 1: README.md is missing or empty.") -and $task1_passed
 $task1_passed = (Check-Requirement ((git -C $ProjectPath log).Length -gt 0) "Task 1: No commits found in repository.") -and $task1_passed
@@ -75,17 +75,17 @@ if (-not $task3_passed) { $AllChecksPassed = $false }
 # Task 4
 $task4_passed = $true
 $branches = git -C $ProjectPath branch
-$task4_passed = (Check-Requirement ($branches -match "feature-development") "Task 4: Branch 'feature-development' was not found.") -and $task4_passed
-$task4_passed = (Check-Requirement ($branches -match "bugfix") "Task 4: Branch 'bugfix' was not found.") -and $task4_passed
+$task4_passed = (Check-Requirement ([bool]($branches -match "feature-development")) "Task 4: Branch 'feature-development' was not found.") -and $task4_passed # <-- CORRECTED
+$task4_passed = (Check-Requirement ([bool]($branches -match "bugfix")) "Task 4: Branch 'bugfix' was not found.") -and $task4_passed # <-- CORRECTED
 $task4_passed = (Check-Requirement ((git -C $ProjectPath ls-tree -r "feature-development" --name-only) -contains "feature.java") "Task 4: 'feature.java' was not found on the 'feature-development' branch.") -and $task4_passed
-$task4_passed = (Check-Requirement ($(git -C $ProjectPath log $MainBranchName --merges --oneline) -match "Merge branch 'bugfix'") "Task 4: The 'bugfix' branch has not been merged into '$MainBranchName'.") -and $task4_passed
+$task4_passed = (Check-Requirement ([bool]($(git -C $ProjectPath log $MainBranchName --merges --oneline) -match "Merge branch 'bugfix'")) "Task 4: The 'bugfix' branch has not been merged into '$MainBranchName'.") -and $task4_passed # <-- CORRECTED
 $task4_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "branching-workflow.txt")) "Task 4: 'branching-workflow.txt' is missing or empty.") -and $task4_passed
 $task4_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "git-commands-summary.txt")) "Task 4: 'git-commands-summary.txt' is missing or empty.") -and $task4_passed
 if (-not $task4_passed) { $AllChecksPassed = $false }
 
 # Task 5
 $task5_passed = $true
-$task5_passed = (Check-Requirement ($(git -C $ProjectPath branch) -match "development") "Task 5: Branch 'development' was not found.") -and $task5_passed
+$task5_passed = (Check-Requirement ([bool]($(git -C $ProjectPath branch) -match "development")) "Task 5: Branch 'development' was not found.") -and $task5_passed # <-- CORRECTED
 $task5_passed = (Check-Requirement (Test-Path (Join-Path $ProjectPath "docs") -PathType Container) "Task 5: The 'docs' folder is missing.") -and $task5_passed
 $task5_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "git-workflow-guide.txt")) "Task 5: 'git-workflow-guide.txt' is missing or empty.") -and $task5_passed
 $task5_passed = (Check-Requirement ([string]::IsNullOrEmpty($(git -C $ProjectPath status --porcelain))) "Task 5: Repository has uncommitted changes.") -and $task5_passed
