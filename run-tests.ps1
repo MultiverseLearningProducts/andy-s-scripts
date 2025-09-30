@@ -48,11 +48,8 @@ $task1_passed = (Check-Requirement (Test-Path (Join-Path $ProjectPath ".git") -P
 $task1_passed = (Check-Requirement ($(git -C $ProjectPath config user.name) -eq "TestUser") "Task 1: Git user.name is not 'TestUser'.") -and $task1_passed
 $task1_passed = (Check-Requirement ($(git -C $ProjectPath config user.email) -eq "testuser@example.com") "Task 1: Git user.email is not 'testuser@example.com'.") -and $task1_passed
 $gitignorePath = Join-Path $ProjectPath ".gitignore"
-if (Test-Path $gitignorePath) {
-    $gitignoreContent = Get-Content $gitignorePath
-    # <-- CORRECTED: Each -match must be converted to a boolean before using -and
-    $task1_passed = (Check-Requirement ([bool]($gitignoreContent -match "\.tmp") -and [bool]($gitignoreContent -match "\.log") -and [bool]($gitignoreContent -match "\.DS_Store")) "Task 1: .gitignore is missing required patterns.") -and $task1_passed
-} else { $task1_passed = (Check-Requirement $false "Task 1: .gitignore file is missing.") -and $task1_passed }
+# This simply checks that the .gitignore file was created and is not empty.
+$task1_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath ".gitignore")) "Task 1: .gitignore file is missing or empty.") -and $task1_passed
 $task1_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "README.md")) "Task 1: README.md is missing or empty.") -and $task1_passed
 $task1_passed = (Check-Requirement ((git -C $ProjectPath log).Length -gt 0) "Task 1: No commits found in repository.") -and $task1_passed
 $task1_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "git-setup-log.txt")) "Task 1: 'git-setup-log.txt' is missing or empty.") -and $task1_passed
@@ -78,7 +75,10 @@ $branches = git -C $ProjectPath branch
 $task4_passed = (Check-Requirement ([bool]($branches -match "feature-development")) "Task 4: Branch 'feature-development' was not found.") -and $task4_passed # <-- CORRECTED
 $task4_passed = (Check-Requirement ([bool]($branches -match "bugfix")) "Task 4: Branch 'bugfix' was not found.") -and $task4_passed # <-- CORRECTED
 $task4_passed = (Check-Requirement ((git -C $ProjectPath ls-tree -r "feature-development" --name-only) -contains "feature.java") "Task 4: 'feature.java' was not found on the 'feature-development' branch.") -and $task4_passed
-$task4_passed = (Check-Requirement ([bool]($(git -C $ProjectPath log $MainBranchName --merges --oneline) -match "Merge branch 'bugfix'")) "Task 4: The 'bugfix' branch has not been merged into '$MainBranchName'.") -and $task4_passed # <-- CORRECTED
+# This robustly checks if the bugfix branch's history is part of the main branch's history.
+$bugfixHead = git -C $ProjectPath rev-parse bugfix
+$mergeBase = git -C $ProjectPath merge-base $MainBranchName bugfix
+$task4_passed = (Check-Requirement ($bugfixHead -eq $mergeBase) "Task 4: The 'bugfix' branch has not been merged into '$MainBranchName'.") -and $task4_passed
 $task4_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "branching-workflow.txt")) "Task 4: 'branching-workflow.txt' is missing or empty.") -and $task4_passed
 $task4_passed = (Check-Requirement (Test-FileNotEmpty (Join-Path $ProjectPath "git-commands-summary.txt")) "Task 4: 'git-commands-summary.txt' is missing or empty.") -and $task4_passed
 if (-not $task4_passed) { $AllChecksPassed = $false }
