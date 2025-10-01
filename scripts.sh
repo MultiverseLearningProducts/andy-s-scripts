@@ -1,217 +1,367 @@
 #!/bin/bash
 
 # ==============================================================================
-# Bash Script to Complete the Git Fundamentals Challenge (Corrected Version)
+# Git Collaboration Challenge Script
+# ==============================================================================
+# This script automates a series of tasks designed to simulate a real-world
+# Git collaborative workflow, from setting up a repository to handling
+# advanced scenarios like releases, hotfixes, and merge conflicts.
+#
+# INSTRUCTIONS:
+# 1. Save this file as git_collaboration_challenge.sh
+# 2. Make it executable: chmod +x git_collaboration_challenge.sh
+# 3. IMPORTANT: Edit the CONFIGURATION variables below.
+# 4. Run the script: ./git_collaboration_challenge.sh
 # ==============================================================================
 
+# --- CONFIGURATION ---
+# ⚠️ Replace these placeholder values with your own information!
+GIT_USER_NAME="Your Name"
+GIT_USER_EMAIL="your.email@example.com"
+# Example: "https://github.com/your-username/your-repo-name.git"
+REMOTE_URL="YOUR_GITHUB_REPOSITORY_URL_HERE"
+
+# --- SCRIPT SETUP ---
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# --- Helper for colored output ---
-COLOR_GREEN='\033[0;32m'
-COLOR_YELLOW='\033[0;33m'
-COLOR_NC='\033[0m' # No Color
-
-echo -e "${COLOR_YELLOW}Starting the Git Fundamentals Challenge script...${COLOR_NC}"
-
-# --- Task 1: Git Repository Setup and Configuration ---
-echo -e "\n${COLOR_GREEN}--- Task 1: Git Repository Setup and Configuration ---${COLOR_NC}"
-# Clean up previous run if it exists
-rm -rf git-fundamentals-project
-mkdir -p git-fundamentals-project
-cd git-fundamentals-project
-
-# Log all commands for this task into git-setup-log.txt
-LOG_FILE="git-setup-log.txt"
-> "$LOG_FILE" # Clear the log file if it exists
-
-log_and_run() {
-    echo "$ $@" >> "$LOG_FILE"
-    "$@"
+# Function to print section headers
+print_header() {
+    echo ""
+    echo "=============================================================================="
+    echo "➡️  $1"
+    echo "=============================================================================="
 }
 
-log_and_run git init
-# Set the default branch name to main for consistency
-log_and_run git config -g init.defaultBranch main
-log_and_run git branch -M main
+# --- SCRIPT START ---
+print_header "Starting Git Collaboration Challenge"
 
-log_and_run git config user.name "TestUser"
-log_and_run git config user.email "testuser@example.com"
+# Verify that a remote URL has been set
+if [ "$REMOTE_URL" == "YOUR_GITHUB_REPOSITORY_URL_HERE" ]; then
+    echo "❌ ERROR: Please edit the script and set your remote repository URL in the CONFIGURATION section."
+    exit 1
+fi
 
-# Create .gitignore
-echo -e "*.tmp\n*.log\n.DS_Store" > .gitignore
-echo 'echo -e "*.tmp\\n*.log\\n.DS_Store" > .gitignore' >> "$LOG_FILE"
+## Task 1: Setting Up Remote Repository Connection
 
-# Create README.md
-echo "# Git Fundamentals Project" > README.md
-echo 'echo "# Git Fundamentals Project" > README.md' >> "$LOG_FILE"
+print_header "Task 1: Setting Up Remote Repository Connection"
 
-log_and_run git add .
-log_and_run git commit -m "Initial commit: Add README and .gitignore"
-log_and_run git status
-log_and_run git log --oneline
+# Create and navigate to the project directory
+cd ~
+rm -rf github-collaboration-project # Clean up previous runs
+mkdir github-collaboration-project
+cd github-collaboration-project
 
-echo "Task 1 complete. Commands logged to $LOG_FILE."
+# Initialize Git and configure user
+git init -b main
+git config user.name "$GIT_USER_NAME"
+git config user.email "$GIT_USER_EMAIL"
+echo "✅ Git repository initialized and configured."
 
-# --- Task 2: Working with Git States and Basic Commands ---
-echo -e "\n${COLOR_GREEN}--- Task 2: Working with Git States ---${COLOR_NC}"
-echo "public class Main { public static void main(String[] args) { System.out.println(\"Hello\"); } }" > main.java
-echo "public class Utils { public static void helper() {} }" > utils.java
-echo "{ \"setting\": \"enabled\" }" > config.json
-echo "Current status (3 untracked files):"
-git status
+# Create initial project files
+echo "# GitHub Collaboration Project" > README.md
+echo "This project demonstrates various Git workflows for team collaboration." >> README.md
 
-git add main.java
-echo "Status after staging main.java:"
-git status
+echo -e "# Ignore dependencies\nnode_modules/\n\n# Ignore environment files\n.env\n*.env\n\n# Ignore log files\n*.log\n" > .gitignore
+echo "✅ README.md and .gitignore files created."
 
-echo "// Adding a comment" >> main.java
-echo "Diff between working directory and staging area for main.java:"
-git diff main.java
+# Make the initial commit
+git add README.md .gitignore
+git commit -m "Initial commit: Add README and .gitignore"
 
-echo "Diff between staging area and repository (shows staged version of main.java):"
-git diff --cached
+# Add remote and push
+git remote add origin $REMOTE_URL
+git push -u origin main
+echo "✅ Initial commit pushed to the remote repository."
 
+# Verify connection and log commands
+git remote -v
+echo "Remote connection verified."
+
+# Document the setup process
+cat > remote-setup-log.txt << EOL
+# Remote Setup Log
+
+This file documents the commands used to set up the remote repository connection.
+
+1.  **Initialize Repository:**
+    \`git init -b main\`
+
+2.  **Configure User:**
+    \`git config user.name "$GIT_USER_NAME"\`
+    \`git config user.email "$GIT_USER_EMAIL"\`
+
+3.  **Add and Commit Initial Files:**
+    \`git add README.md .gitignore\`
+    \`git commit -m "Initial commit: Add README and .gitignore"\`
+
+4.  **Add Remote Origin:**
+    \`git remote add origin $REMOTE_URL\`
+
+5.  **Push to Remote:**
+    \`git push -u origin main\`
+
+6.  **Verify Connection:**
+    \`git remote -v\`
+EOL
+git add remote-setup-log.txt
+git commit -m "docs: Document remote setup process"
+git push
+
+---
+## Task 2: Collaborative Branching Workflow
+
+print_header "Task 2: Collaborative Branching Workflow"
+
+# Create and push the develop branch
+git checkout -b develop
+git push -u origin develop
+echo "✅ 'develop' branch created and pushed."
+
+# Create feature/user-authentication branch
+git checkout -b feature/user-authentication
+echo "def login(user, password): pass" > auth.py
+echo "class User: pass" > user.py
+echo "<h1>Login Page</h1>" > login.html
 git add .
-git commit -m "Feat: Add java source files and config"
+git commit -m "feat: Implement basic user authentication structure"
+git push -u origin feature/user-authentication
+echo "✅ 'feature/user-authentication' branch created and pushed."
 
-cat <<EOF > git-states-explanation.txt
-Git has three main states for your files:
-1.  Working Directory: Your local files that you are currently editing.
-2.  Staging Area (Index): A snapshot of files you've marked ('git add') to be included in your next commit.
-3.  Repository (.git directory): The permanent history of all your committed snapshots.
-
-'git status' shows the state of files. 'git diff' shows changes in the working directory not yet staged. 'git diff --cached' shows staged changes that are not yet committed.
-EOF
-echo "Task 2 complete. Wrote explanation to git-states-explanation.txt."
-
-# --- Task 3: Git History and Log Management ---
-echo -e "\n${COLOR_GREEN}--- Task 3: Git History and Log Management ---${COLOR_NC}"
-# Make 3 more commits
-echo "public class Utils { public static void helper() { /* updated */ } }" > utils.java
-git commit -am "Refactor: Update Utils helper method"
-
-echo "{ \"setting\": \"disabled\", \"mode\": \"safe\" }" > config.json
-git commit -am "Config: Disable setting and add safe mode"
-
-echo "Initial project setup for learning Git fundamentals." >> README.md
-git commit -am "Docs: Update project description in README"
-
-echo "Viewing condensed, graphical log:"
-git log --graph --oneline
-
-LATEST_HASH=$(git log --oneline -1 | cut -d' ' -f1)
-echo "Showing details for a specific commit ($LATEST_HASH):"
-git show "$LATEST_HASH"
-
-git log > commit-history.txt
-
-cat <<EOF > git-log-analysis.txt
-Analysis of 'git log' commands:
-- 'git log': Shows the complete commit history with author, date, and full message.
-- 'git log --oneline': Condenses each commit to a single line showing the hash and title.
-- 'git log --graph': Displays the branch and merge history as an ASCII graph.
-- 'git show <hash>': Shows the metadata and content changes of a specific commit.
-- 'git log --author="TestUser"': Filters the log to show only commits by a specific author.
-EOF
-
-echo "Task 3 complete. Saved log to commit-history.txt and analysis to git-log-analysis.txt."
-
-# --- Task 4: Basic Branching and Repository Management ---
-echo -e "\n${COLOR_GREEN}--- Task 4: Basic Branching and Repository Management ---${COLOR_NC}"
-git branch feature-development
-git switch feature-development
-
-echo "public class Feature { public void newFeature() {} }" > feature.java
-git add feature.java
-git commit -m "Feat: Implement new feature"
-
-git switch main
-echo "Switched to main. 'feature.java' should not exist here:"
-ls -la
-
-git branch bugfix
-git switch bugfix
-echo "A small fix for a bug." >> README.md
-git commit -am "Fix: Correct typo in README"
-
-git switch main
-# --- FIX #1: Use --no-ff to force a merge commit ---
-git merge --no-ff bugfix
-
-echo "Current branches (* indicates active branch):"
-git branch
-
-cat <<EOF > branching-workflow.txt
-Branching allows for parallel development.
-1. Create a branch ('git branch <name>') for a new feature or bugfix.
-2. Switch to it ('git switch <name>').
-3. Make and commit changes on this branch. This isolates your work from the main codebase.
-4. When work is complete and tested, switch back to the main branch and merge the changes ('git merge <name>').
-EOF
-
-echo "Task 4 complete. Wrote explanation to branching-workflow.txt."
-
-# --- Task 5: Git Best Practices and Workflow ---
-echo -e "\n${COLOR_GREEN}--- Task 5: Git Best Practices and Workflow ---${COLOR_NC}"
-git branch development
-git switch development
-
-mkdir docs
-echo "Documentation for main.java" > docs/main.md
+# Create feature/data-processing branch
+git checkout develop
+git checkout -b feature/data-processing
+echo "def process_data(data): pass" > processor.py
+echo "{}" > data.json
+echo "def helper_function(): pass" > utils.py
 git add .
-git commit -m "Feat: Add documentation structure"
+git commit -m "feat: Add initial data processing modules"
+git push -u origin feature/data-processing
+echo "✅ 'feature/data-processing' branch created and pushed."
 
-echo "Documentation for utils.java" > docs/utils.md
+# Merge feature/user-authentication into develop
+git checkout develop
+git merge --no-ff feature/user-authentication -m "Merge feature/user-authentication"
+git push origin develop
+echo "✅ 'feature/user-authentication' merged into 'develop'."
+
+# Document the branching strategy
+cat > branching-strategy.txt << EOL
+# Branching Strategy
+
+-   \`main\`: Contains production-ready code.
+-   \`develop\`: Main development branch where features are integrated.
+-   \`feature/*\`: Individual branches for new features (e.g., \`feature/user-authentication\`). They are branched from \`develop\` and merged back into it.
+EOL
+git add branching-strategy.txt
+git commit -m "docs: Document branching strategy"
+git push
+
+---
+## Task 3: Handling Merge Conflicts
+
+print_header "Task 3: Simulating and Resolving Merge Conflicts"
+
+# Create feature/config-updates branch
+git checkout -b feature/config-updates develop
+echo "# Configuration settings\nAPI_KEY='feature_branch_api_key'" > config.py
 git add .
-git commit -m "a bad commit message"
-git commit --amend -m "Docs: Add documentation for utils"
+git commit -m "feat: Add config file with API key"
+git push -u origin feature/config-updates
+echo "✅ 'feature/config-updates' branch created with a config file."
 
-# Demonstrate reset
-touch temp.log
-git add temp.log
-echo "Staged temp.log, now resetting..."
-git reset HEAD temp.log
-rm temp.log
-
-# Demonstrate checkout
-echo "Adding a mistake to README" >> README.md
-git status
-echo "Discarding mistake from README..."
-git checkout -- README.md
-git status
-
-cat <<EOF > git-workflow-guide.txt
-A comprehensive guide to Git workflows.
-
-Best Practices for Commit Messages:
-- Use imperative mood ("Add feature" not "Added feature").
-- Separate subject from body with a blank line.
-- Limit the subject line to 50 characters.
-
-Branching Strategy:
-- 'main' is always stable and deployable.
-- 'development' is the integration branch for features.
-- Feature branches ('feature/...') are for new work.
-- Bugfix branches ('bugfix/...') are for urgent fixes.
-
-Common Workflow (Git Flow):
-1. Create a 'develop' branch from 'main'.
-2. Create feature branches from 'develop'.
-3. When a feature is complete, merge it back into 'develop'.
-4. When 'develop' is stable, merge it into 'main' for a release.
-EOF
-
-# Create a final summary file from Task 4
-cp branching-workflow.txt git-commands-summary.txt
-echo -e "\nSummary of commands can be found by reviewing the script and log files." >> git-commands-summary.txt
-
-# --- FIX #2: Add and commit the final documentation files ---
-echo "Adding final documentation files to the repository..."
+# Create a conflicting change in develop
+git checkout develop
+echo "# Main configuration\nDATABASE_URL='develop_branch_db_url'" > config.py
 git add .
-git commit -m "Docs: Add final workflow and summary documents"
+git commit -m "feat: Add config file with database URL"
+echo "✅ Conflicting config file created on 'develop' branch."
 
-# Final check
-echo "Final repository status:"
-git status
-echo -e "\n${COLOR_YELLOW}All challenge tasks have been completed successfully!${COLOR_NC}"
+# Attempt merge to create a conflict (|| true prevents script exit)
+echo "⏳ Attempting to merge, a conflict is expected..."
+git merge feature/config-updates || true
+
+# Resolve the conflict automatically
+echo "✅ Conflict detected as expected. Now resolving..."
+echo -e "# Main configuration\nAPI_KEY='feature_branch_api_key'\nDATABASE_URL='develop_branch_db_url'" > config.py
+git add config.py
+git commit -m "fix: Resolve merge conflict for config file"
+echo "✅ Merge conflict resolved and committed."
+
+# Push the resolved develop branch
+git push origin develop
+
+# Document the resolution process
+cat > conflict-resolution-log.txt << EOL
+# Conflict Resolution Log
+
+A merge conflict occurred in \`config.py\` when merging \`feature/config-updates\` into \`develop\`.
+
+-   **Conflict Cause:** Both branches added a \`config.py\` file with different content.
+-   **Resolution:** The changes were manually combined to include both the \`API_KEY\` from the feature branch and the \`DATABASE_URL\` from the develop branch.
+EOL
+git add conflict-resolution-log.txt
+git commit -m "docs: Log conflict resolution process"
+git push
+
+# Clean up merged branches
+git branch -d feature/user-authentication
+git branch -d feature/config-updates
+git push origin --delete feature/user-authentication
+git push origin --delete feature/config-updates
+echo "✅ Merged branches cleaned up locally and remotely."
+
+# Document cleanup
+echo "Deleted local branches: feature/user-authentication, feature/config-updates. Deleted remote branches with 'git push origin --delete <branch_name>'." > branch-cleanup-log.txt
+git add branch-cleanup-log.txt
+git commit -m "docs: Log branch cleanup"
+git push
+
+---
+## Task 4: Pull Requests and Code Review Simulation
+
+print_header "Task 4: Simulating Pull Request Workflow"
+
+# Create and push feature/documentation branch
+git checkout -b feature/documentation develop
+mkdir -p docs
+echo "# API Documentation" > docs/API.md
+echo "# Contribution Guidelines" > docs/CONTRIBUTING.md
+echo "# Changelog" > docs/CHANGELOG.md
+git add .
+git commit -m "docs: Add initial project documentation structure"
+echo "✅ 'feature/documentation' branch created with initial docs."
+
+# Create PR simulation files
+echo "This pull request introduces comprehensive documentation for the project, including API guides and contribution guidelines." > pull-request-description.txt
+echo "- [ ] Is the documentation clear and concise?\n- [ ] Are there any typos or grammatical errors?" > code-review-checklist.txt
+
+# Simulate addressing review feedback
+echo "\n## v1.0.0 - Initial Release" >> docs/CHANGELOG.md
+git add docs/CHANGELOG.md
+git commit -m "docs: Update changelog based on review feedback"
+git push -u origin feature/documentation
+echo "✅ Simulated review feedback and pushed updates."
+
+# Merge the branch
+git checkout develop
+git merge --no-ff feature/documentation -m "Merge branch 'feature/documentation'"
+git push origin develop
+echo "✅ Documentation branch merged into 'develop'."
+
+# Document the PR workflow
+cat > pr-workflow-guide.txt << EOL
+# Pull Request (PR) Workflow Guide
+
+1.  Create a feature branch from \`develop\`.
+2.  Make commits and push the branch to the remote.
+3.  Create a Pull Request on GitHub from your feature branch to \`develop\`.
+4.  Team members review the code, leave comments, and use a checklist.
+5.  Address feedback with additional commits on the feature branch.
+6.  Once approved, merge the PR into \`develop\`.
+7.  Delete the feature branch after merging.
+EOL
+git add .
+git commit -m "docs: Add PR workflow guide and simulation files"
+git push
+
+---
+## Task 5: Advanced Git Collaboration Techniques
+
+print_header "Task 5: Advanced Git Techniques"
+
+# Create a release branch and tag it
+git checkout -b release/v1.0.0 develop
+echo "1.0.0" > VERSION.txt
+echo "# Release Notes v1.0.0\n\n- Added user authentication\n- Implemented data processing" > RELEASE_NOTES.md
+git add .
+git commit -m "chore(release): Prepare for release v1.0.0"
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push -u origin release/v1.0.0
+git push origin v1.0.0
+echo "✅ Release v1.0.0 created, tagged, and pushed."
+
+# Create a hotfix
+git checkout -b hotfix/critical-security-fix release/v1.0.0
+echo "Applied critical security patch" > security.patch
+git add .
+git commit -m "fix: Apply critical security patch"
+
+# Merge hotfix into develop and release branches
+git checkout develop
+git merge --no-ff hotfix/critical-security-fix -m "Merge hotfix/critical-security-fix"
+git checkout release/v1.0.0
+git merge --no-ff hotfix/critical-security-fix -m "Merge hotfix/critical-security-fix"
+
+# Tag the hotfix
+git tag -a v1.0.1 -m "Hotfix release v1.0.1 for critical security issue"
+git push --all
+git push --tags
+echo "✅ Hotfix created, merged into 'develop' and 'release/v1.0.0', and tagged as v1.0.1."
+
+# Demonstrate git stash
+git checkout develop
+echo "This is a temporary change that should not be committed yet." > temp-work.txt
+git stash
+echo "✅ Work stashed. Working directory is clean."
+# Here you could switch branches, pull changes, etc.
+git stash pop
+echo "✅ Stash popped. Temporary work is restored."
+rm temp-work.txt # Clean up
+
+# Demonstrate git rebase
+git checkout -b feature/rebase-demo develop
+echo "Change 1" > rebase-demo.txt
+git add . && git commit -m "feat: Add part 1 of rebase demo"
+echo "Change 2" >> rebase-demo.txt
+git add . && git commit -m "feat: Add part 2 of rebase demo"
+
+# Make a change on develop to rebase onto
+git checkout develop
+echo "This commit moves develop's HEAD forward." > update.txt
+git add . && git commit -m "feat: Update develop with new file"
+git push
+
+# Rebase the feature branch
+git checkout feature/rebase-demo
+git rebase develop
+git push -u origin feature/rebase-demo --force-with-lease # Force push is needed after rebase
+echo "✅ 'feature/rebase-demo' rebased onto 'develop' and pushed."
+
+# Create the final comprehensive guide
+cat > git-collaboration-guide.txt << EOL
+# Comprehensive Git Collaboration Guide
+
+## Remote Repository Workflows
+-   **Origin:** The default name for the remote repository you cloned from.
+-   **Fetch vs. Pull:** \`git fetch\` downloads changes without merging, while \`git pull\` fetches and merges.
+-   **Pushing:** Use \`git push origin <branch_name>\` to share your changes.
+
+## Branching Strategies
+-   **GitFlow (simulated here):** Uses \`main\`, \`develop\`, \`feature/*\`, \`release/*\`, and \`hotfix/*\` branches for a structured workflow.
+-   **GitHub Flow:** A simpler model where \`main\` is always deployable and feature branches are created from it.
+
+## Merge vs. Rebase
+-   **Merge:** Combines histories with a "merge commit". Preserves the exact history of branches. Good for shared branches like \`develop\`.
+-   **Rebase:** Re-writes commit history by replaying commits on top of another branch. Creates a cleaner, linear history. Best used on private feature branches before merging to avoid issues for collaborators.
+
+## Tag Management
+-   **Lightweight Tags:** Simple pointers to a specific commit.
+-   **Annotated Tags (used here):** Recommended for releases. They are stored as full objects in the Git database, containing the tagger's name, email, date, and a message.
+-   **Commands:** \`git tag -a v1.0 -m "message"\`, \`git push origin --tags\`.
+
+## Best Practices
+-   Commit often with clear, descriptive messages.
+-   Keep branches small and focused on a single feature or fix.
+-   Pull changes from \`develop\` frequently into your feature branch to avoid large conflicts.
+-   Use Pull Requests for code review before merging.
+-   Clean up merged branches.
+EOL
+git add .
+git commit -m "docs: Add final comprehensive collaboration guide"
+git push
+
+# --- SCRIPT FINISH ---
+print_header "🎉 All tasks completed successfully!"
+echo "Your local repository is in '~/github-collaboration-project'"
+echo "All branches, tags, and files have been pushed to the remote repository."
